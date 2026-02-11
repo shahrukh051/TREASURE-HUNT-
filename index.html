@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate Adventure Game</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    text-align:center;
+    color:white;
+    background-size:cover;
+    background-position:center;
+    transition:0.5s;
+}
+
+.overlay{
+    background:rgba(0,0,0,0.7);
+    min-height:100vh;
+    padding:20px;
+}
+
+.game-box{
+    max-width:500px;
+    margin:auto;
+}
+
+button{
+    padding:10px 15px;
+    margin:8px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    transform:scale(1.05);
+}
+
+.avatar{
+    width:80px;
+    border-radius:50%;
+    margin:10px;
+    cursor:pointer;
+    border:3px solid transparent;
+}
+
+.avatar:hover{
+    border:3px solid yellow;
+}
+
+.stats{
+    margin:10px 0;
+    font-weight:bold;
+}
+
+@media(max-width:600px){
+    button{ width:90%; }
+}
+</style>
+</head>
+
+<body>
+<div class="overlay">
+<div class="game-box">
+
+<h2>Adventure Game</h2>
+
+<div class="stats">
+    ❤️ Health: <span id="health">3</span> |
+    ⭐ Score: <span id="score">0</span> |
+    🏆 Level: <span id="level">1</span>
+</div>
+
+<div id="avatarSection"></div>
+<div id="game"></div>
+<div id="message"></div>
+
+</div>
+</div>
+
+<!-- Sounds -->
+<audio id="clickSound" src="click.mp3"></audio>
+<audio id="winSound" src="win.mp3"></audio>
+<audio id="loseSound" src="lose.mp3"></audio>
+<audio id="bgMusic" src="bgmusic.mp3" loop></audio>
+
+<script>
+
+// ===== GAME STATE VARIABLES =====
+let playerName = "";
+let health = 3;
+let score = 0;
+let level = 1;
+let selectedAvatar = "";
+
+// ===== ELEMENT REFERENCES =====
+const gameDiv = document.getElementById("game");
+const messageDiv = document.getElementById("message");
+
+// ===== SOUND FUNCTIONS =====
+function clickSound(){ document.getElementById("clickSound").play(); }
+function winSound(){ document.getElementById("winSound").play(); }
+function loseSound(){ document.getElementById("loseSound").play(); }
+
+function startMusic(){
+    let music = document.getElementById("bgMusic");
+    music.volume = 0.4;
+    music.play();
+}
+
+// ===== UPDATE UI STATS =====
+function updateStats(){
+    document.getElementById("health").innerText = health;
+    document.getElementById("score").innerText = score;
+    document.getElementById("level").innerText = level;
+}
+
+// ===== CHANGE BACKGROUND =====
+function setBackground(img){
+    document.body.style.backgroundImage = `url('${img}')`;
+}
+
+// ===== START GAME SCREEN =====
+function startGame(){
+
+    setBackground("road.jpg");
+
+    health = 3;
+    score = 0;
+    level = 1;
+    updateStats();
+
+    document.getElementById("avatarSection").innerHTML = `
+        <h3>Select Your Character</h3>
+        <img src="avatar1.png" class="avatar" onclick="selectAvatar('avatar1.png')">
+        <img src="avatar2.png" class="avatar" onclick="selectAvatar('avatar2.png')">
+        <img src="avatar3.png" class="avatar" onclick="selectAvatar('avatar3.png')">
+    `;
+
+    gameDiv.innerHTML = "";
+    messageDiv.innerHTML = "";
+}
+
+// ===== AVATAR SELECTION =====
+function selectAvatar(img){
+    selectedAvatar = img;
+    clickSound();
+    startMusic();
+
+    document.getElementById("avatarSection").innerHTML = `
+        <img src="${img}" width="100"><br>
+        <input type="text" id="nameInput" placeholder="Enter your name">
+        <br>
+        <button onclick="welcome()">Start Adventure</button>
+    `;
+}
+
+// ===== WELCOME SCREEN =====
+function welcome(){
+
+    playerName = document.getElementById("nameInput").value.trim().toUpperCase();
+    if(playerName === "") return;
+
+    messageDiv.innerHTML = `
+        WELCOME ${playerName}! <br>
+        You are on a dirt road. Choose LEFT or RIGHT.
+    `;
+
+    gameDiv.innerHTML = `
+        <button onclick="firstChoice('left')">LEFT</button>
+        <button onclick="firstChoice('right')">RIGHT</button>
+    `;
+}
+
+// ===== FIRST CHOICE =====
+function firstChoice(choice){
+    clickSound();
+
+    if(choice === "left"){
+        setBackground("park.jpg");
+        messageDiv.innerHTML = "You entered an amusement park!";
+        gameDiv.innerHTML = `
+            <button onclick="parkChoice('roller')">ROLLER COASTER</button>
+            <button onclick="parkChoice('ferris')">FERRIS WHEEL</button>
+        `;
+    } else {
+        setBackground("hut.jpg");
+        messageDiv.innerHTML = "You see a scary hut.";
+        gameDiv.innerHTML = `
+            <button onclick="hutChoice('enter')">ENTER</button>
+            <button onclick="hutChoice('run')">RUN AWAY</button>
+        `;
+    }
+}
+
+// ===== PARK =====
+function parkChoice(choice){
+    clickSound();
+
+    if(choice === "roller"){
+        score += 10;
+        winSound();
+        messageDiv.innerHTML = "Exciting ride! +10 Score 🎢";
+    } else {
+        score += 5;
+        winSound();
+        messageDiv.innerHTML = "Beautiful view! +5 Score 🎡";
+    }
+
+    level++;
+    updateStats();
+    gameDiv.innerHTML = `<button onclick="nextLevel()">Continue</button>`;
+}
+
+// ===== HUT =====
+function hutChoice(choice){
+    clickSound();
+
+    if(choice === "enter"){
+        score += 15;
+        winSound();
+        messageDiv.innerHTML = "You found treasure! +15 Score 🏆";
+        level++;
+    } else {
+        health--;
+        loseSound();
+        messageDiv.innerHTML = "You lost courage! -1 Health ❌";
+    }
+
+    updateStats();
+    checkGameOver();
+    gameDiv.innerHTML = `<button onclick="nextLevel()">Continue</button>`;
+}
+
+// ===== NEXT LEVEL =====
+function nextLevel(){
+    if(health > 0){
+        setBackground("road.jpg");
+        messageDiv.innerHTML = "A new path appears... LEFT or RIGHT?";
+        gameDiv.innerHTML = `
+            <button onclick="firstChoice('left')">LEFT</button>
+            <button onclick="firstChoice('right')">RIGHT</button>
+        `;
+    }
+}
+
+// ===== GAME OVER =====
+function checkGameOver(){
+    if(health <= 0){
+        messageDiv.innerHTML = "GAME OVER 💀";
+        gameDiv.innerHTML = `<button onclick="startGame()">Restart</button>`;
+    }
+}
+
+// ===== ENTER KEY SUPPORT =====
+document.addEventListener("keydown", function(event){
+
+    if(event.key === "Enter"){
+
+        // If user typing in input → press main button
+        const active = document.activeElement;
+
+        if(active && active.tagName === "INPUT"){
+            const btn = document.querySelector("#avatarSection button");
+            if(btn) btn.click();
+        }
+        else{
+            const btn = document.querySelector("#game button");
+            if(btn) btn.click();
+        }
+    }
+});
+
+// ===== INITIAL START =====
+startGame();
+
+</script>
+</body>
+</html>
